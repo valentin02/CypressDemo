@@ -1,7 +1,7 @@
 name: Run Cypress Tests
 
 on:
-  workflow_dispatch:   # запуск вручну кнопкою в Actions
+  workflow_dispatch:
 
 jobs:
   cypress-tests:
@@ -11,57 +11,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ----------------------------
-      # CACHE: npm dependencies
-      # Кешує ~/.npm на основі package-lock.json
-      # ----------------------------
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      # ----------------------------
-      # CACHE: Cypress binary (~200+ MB)
-      # Кешує директорію з бінарником Cypress
-      # ----------------------------
-      - name: Cache Cypress
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'   # додатково увімкне вбудований кеш npm у setup-node
 
-      # Використовуємо npm ci (швидше та детермінованіше для CI)
-      - name: Install dependencies
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies (npm ci)
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      # Запуск конкретного спека
       - name: Run Cypress tests
         run: npx cypress run --spec "cypress/e2e/OzanKaraliMedium/openOzanKarali.cy.js"
-
-      # (необов'язково) завантажити відео/скріншоти як артефакти при фейлі
-      - name: Upload Cypress videos
-        if: failure() || always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-videos
-          path: cypress/videos
-          if-no-files-found: ignore
-
-      - name: Upload Cypress screenshots
-        if: failure() || always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-screenshots
-          path: cypress/screenshots
-          if-no-files-found: ignore
