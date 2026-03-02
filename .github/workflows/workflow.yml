@@ -16,16 +16,31 @@ jobs:
         with:
           node-version: 20
 
+      # Cache node_modules
       - name: Cache node_modules
-        id: cache
+        id: cache-node
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 
+      # Cache Cypress binary
+      - name: Cache Cypress binary
+        id: cache-cypress
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # Install deps only when cache is missing
       - name: Install dependencies (npm ci)
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-node.outputs.cache-hit != 'true'
         run: npm ci
+
+      # Install Cypress binary only when cache is missing
+      - name: Install Cypress binary
+        if: steps.cache-cypress.outputs.cache-hit != 'true'
+        run: npx cypress install
 
       - name: Run Cypress tests
         run: npx cypress run --spec "cypress/e2e/OzanKaraliMedium/openOzanKarali.cy.js"
