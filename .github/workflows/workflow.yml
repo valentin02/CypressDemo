@@ -1,3 +1,4 @@
+
 name: Run Cypress Tests
 
 on:
@@ -20,11 +21,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cypress run
+      - name: Run Cypress in Cloud
         uses: cypress-io/github-action@v7
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         with:
           record: true
-          key: ${{ secrets.CYPRESS_RECORD_KEY }}
           spec: "cypress/e2e/OzanKaraliMedium/openOzanKarali.cy.js"
-          start: ""        # !!! вимикаємо npm start
-          build: ""        # !!! вимикаємо build
+          start: ""     # у тебе немає npm start
+          build: ""     # і немає build
